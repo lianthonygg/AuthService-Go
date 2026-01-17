@@ -1,19 +1,35 @@
 package server
 
 import (
-	"auth-service/internal/middleware"
+	"database/sql"
 	"net/http"
 	"time"
+
+	"auth-service/internal/features/user/service"
+	"auth-service/internal/features/user/store"
+	"auth-service/internal/features/user/transport"
+	"auth-service/internal/middleware"
 )
 
-func New() http.Handler {
+func New(db *sql.DB) http.Handler {
 	mux := http.NewServeMux()
-	rl := middleware.NewRateLimiter(100, time.Minute)
+	rl := middleware.NewRateLimiter(5, time.Minute)
+
+	//User Service
+	userStore := store.New(db)
+  userService := service.New(userStore)
+	userHandler := transport.New(*userService)
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
+
+	mux.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("hello world"))
+	})
+
+	mux.HandleFunc("/users", userHandler.UsersHandler)
 
 	handler := middleware.Chain(
 		mux,
