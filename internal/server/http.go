@@ -15,9 +15,9 @@ func New(db *sql.DB) http.Handler {
 	mux := http.NewServeMux()
 	rl := middleware.NewRateLimiter(5, time.Minute)
 
-	//User Service
+	// User Service
 	userStore := store.New(db)
-  userService := service.New(userStore)
+	userService := service.New(userStore)
 	userHandler := transport.New(*userService)
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
@@ -30,6 +30,7 @@ func New(db *sql.DB) http.Handler {
 	})
 
 	mux.HandleFunc("/users", userHandler.UsersHandler)
+	mux.HandleFunc("/users/", userHandler.UserHandlerById)
 
 	handler := middleware.Chain(
 		mux,

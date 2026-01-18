@@ -3,6 +3,7 @@ package service
 import (
 	"auth-service/internal/features/user/model"
 	"auth-service/internal/features/user/store"
+	"auth-service/internal/features/user/validate"
 )
 
 type UserService struct {
@@ -31,13 +32,13 @@ func (u *UserService) GetUserById(id string) (*model.User, error) {
 	return user, nil
 }
 
-func (u *UserService) CreateUser(user *model.User) (*model.User, error) {
-	user, err := u.store.Create(user)
+func (u *UserService) CreateUser(user *validate.CreateUserRequest) (*model.User, error) {
+	created, err := u.store.Create(user)
 	if err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	return created, nil
 }
 
 func (u *UserService) UpdateUser(id string, user *model.User) (*model.User, error) {
