@@ -32,7 +32,7 @@ func main() {
 
 	log.Println("✅ Connected to PostgreSQL")
 
-	handler := server.New(db)
+	handler := server.New(db, config)
 
 	srv := &http.Server{
 		Handler:      handler,
