@@ -10,7 +10,7 @@ import (
 
 type userContextKeyType struct{}
 
-var userContextKey = userContextKeyType{}
+var UserContextKey = userContextKeyType{}
 
 type Claims struct {
 	UserID string `json:"user_id"`
@@ -28,7 +28,7 @@ func JWTAuth(secret string) Middleware {
 				return
 			}
 
-			parts := strings.Split(auth, "")
+			parts := strings.Fields(auth)
 			if len(parts) != 2 || parts[0] != "Bearer" {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
@@ -46,13 +46,13 @@ func JWTAuth(secret string) Middleware {
 
 			claims := token.Claims.(*Claims)
 
-			ctx := context.WithValue(r.Context(), userContextKey, claims)
+			ctx := context.WithValue(r.Context(), UserContextKey, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
 func GetUser(ctx context.Context) (*Claims, bool) {
-	claims, ok := ctx.Value(userContextKey).(*Claims)
+	claims, ok := ctx.Value(UserContextKey).(*Claims)
 	return claims, ok
 }

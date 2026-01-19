@@ -7,6 +7,7 @@ import (
 
 	"auth-service/internal/config"
 	authService "auth-service/internal/features/auth/service"
+	authStore "auth-service/internal/features/auth/store"
 	authHandler "auth-service/internal/features/auth/transport"
 	"auth-service/internal/features/user/service"
 	"auth-service/internal/features/user/store"
@@ -29,12 +30,16 @@ func New(db *sql.DB, config *config.Config) http.Handler {
 	userHandler := transport.New(*userService)
 
 	// Auth Service
-	authService := authService.New(*userService, generator, hasher)
-	authHandler := authHandler.New(*authService)
+	autheStore := authStore.NewAuthStore(db)
+	autheService := authService.New(*userService, autheStore, generator, hasher)
+	autheHandler := authHandler.New(*autheService)
 
 	// Auth Endpoints
-	mux.HandleFunc("POST /auth/login", authHandler.LoginHandler)
-	mux.HandleFunc("POST /auth/register", authHandler.RegisterHandler)
+	mux.Handle("GET /auth/me", middleware.JWTAuth(config.SecretKey)(http.HandlerFunc(autheHandler.AuthMeHandler)))
+	mux.HandleFunc("POST /auth/login", autheHandler.LoginHandler)
+	mux.HandleFunc("POST /auth/register", autheHandler.RegisterHandler)
+	mux.HandleFunc("POST /auth/refresh", autheHandler.RefreshTokenHandler)
+	mux.HandleFunc("POST /auth/logout", autheHandler.RefreshTokenRevokedHandler)
 
 	// Users Endpoints
 	mux.HandleFunc("GET /users", userHandler.GetAllUsersHandler)

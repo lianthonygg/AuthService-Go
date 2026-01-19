@@ -1,6 +1,8 @@
 package security
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"time"
 
 	"auth-service/internal/config"
@@ -11,6 +13,7 @@ import (
 
 type TokenGenerator interface {
 	Generate(user *model.User) (string, error)
+	GenerateRefreshToken() string
 }
 
 type JwtTokenGenerator struct {
@@ -34,12 +37,19 @@ func (j *JwtTokenGenerator) Generate(user *model.User) (string, error) {
 		"aud":   j.settings.Audience,
 		"exp":   now.Add(time.Duration(j.settings.ExpirationHours) * time.Hour).Unix(),
 
-		"role":              "User",
-		"fullName":          user.Name,
-		"isAvailable":       true,
+		"role":        "User",
+		"fullName":    user.Name,
+		"isAvailable": true,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	return token.SignedString([]byte(j.settings.SecretKey))
+}
+
+func (j *JwtTokenGenerator) GenerateRefreshToken() string {
+	b := make([]byte, 64)
+	rand.Read(b)
+
+	return hex.EncodeToString(b)
 }
